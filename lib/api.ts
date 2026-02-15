@@ -1,24 +1,10 @@
 import { CreateTodoRequest, PaginatedResponse, Todo } from "./types";
 
-// Spring Boot 3.2+ nests pagination metadata under a "page" key
-interface SpringBootPageResponse<T> {
-  content: T[];
-  page?: {
-    size: number;
-    number: number;
-    totalElements: number;
-    totalPages: number;
-  };
-  totalPages?: number;
-  totalElements?: number;
-  number?: number;
-  size?: number;
-  first?: boolean;
-  last?: boolean;
-  empty?: boolean;
-}
+const PROD_URL = "https://glorified-todo.vercel.app/api/todos";
+const DEV_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/todos";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+// Auto-detect: use prod URL on Vercel, dev URL locally
+const BASE_URL = process.env.NODE_ENV === "production" ? PROD_URL : DEV_URL;
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -28,10 +14,17 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
-// Normalizes Spring Boot 3.2+ nested page format to flat format
-function normalizePage<T>(raw: SpringBootPageResponse<T>): PaginatedResponse<T> {
+export async function fetchTodos(
+  page: number = 0,
+  size: number = 5,
+  sort: string = "name"
+): Promise<PaginatedResponse<Todo>> {
+  const res = await fetch(`${BASE_URL}?page=${page}&size=${size}&sort=${sort}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any = await handleResponse(res);
+
+  // Normalize Spring Boot 3.2+ nested "page" format to flat PaginatedResponse
   if (raw.page) {
-    // Spring Boot 3.2+ format: metadata nested under "page"
     return {
       content: raw.content,
       totalPages: raw.page.totalPages,
@@ -43,27 +36,8 @@ function normalizePage<T>(raw: SpringBootPageResponse<T>): PaginatedResponse<T> 
       empty: raw.content.length === 0,
     };
   }
-  // Older Spring Boot format: flat structure
-  return {
-    content: raw.content,
-    totalPages: raw.totalPages ?? 0,
-    totalElements: raw.totalElements ?? 0,
-    number: raw.number ?? 0,
-    size: raw.size ?? 0,
-    first: raw.first ?? true,
-    last: raw.last ?? true,
-    empty: raw.empty ?? raw.content.length === 0,
-  };
-}
 
-export async function fetchTodos(
-  page: number = 0,
-  size: number = 5,
-  sort: string = "name"
-): Promise<PaginatedResponse<Todo>> {
-  const res = await fetch(`${BASE_URL}?page=${page}&size=${size}&sort=${sort}`);
-  const raw = await handleResponse<SpringBootPageResponse<Todo>>(res);
-  return normalizePage(raw);
+  return raw as PaginatedResponse<Todo>;
 }
 
 export async function createTodo(data: CreateTodoRequest): Promise<Todo> {

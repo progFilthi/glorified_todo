@@ -81,7 +81,7 @@ export default function TodoDetailPage() {
   const { data: todo, isLoading, error } = useQuery({
     queryKey: ["todo", id],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${id}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL!}/${id}`);
       if (!res.ok) throw new Error("Todo not found");
       return res.json() as Promise<Todo>;
     },
