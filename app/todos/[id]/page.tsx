@@ -1,10 +1,10 @@
 "use client";
 
-import { useTodos } from "@/hooks/use-todos";
+
 import { useCompleteTodo, useReopenTodo, useUpdateTodo, useDeleteTodo } from "@/hooks/use-todos";
 import { Todo } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
-import { fetchTodos } from "@/lib/api";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,11 +80,7 @@ export default function TodoDetailPage() {
 
   const { data: todo, isLoading, error } = useQuery({
     queryKey: ["todo", id],
-    queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL!}/${id}`);
-      if (!res.ok) throw new Error("Todo not found");
-      return res.json() as Promise<Todo>;
-    },
+    queryFn: () => api.fetchTodoById(id),
     enabled: !isNaN(id),
   });
 

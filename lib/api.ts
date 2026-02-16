@@ -50,6 +50,11 @@ export async function createTodo(data: CreateTodoRequest): Promise<Todo> {
   return handleResponse<Todo>(res);
 }
 
+export async function fetchTodoById(id: number): Promise<Todo> {
+  const res = await fetch(`${BASE_URL}/${id}`);
+  return handleResponse<Todo>(res);
+}
+
 export async function updateTodo(
   id: number,
   data: CreateTodoRequest,
